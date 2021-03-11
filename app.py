@@ -54,13 +54,17 @@ st.write("""## Falhas do {} por {}""".format(equipamento,periodo.lower()))
 
 #df['Data'] = df['Data'].apply(lambda x: str(x))
 #df['Data'] = df['Data'].apply(lambda x: x[:8]+'15'+x[10:])
-df['Data'] = df['Data'].apply(lambda x: transform_day(x))
+df['Data'] = df['Data'].apply(lambda x: transform_day(x,periodo))
 df['Data'] = df['Data'].astype("datetime64")
 
 ts = df[df['Equipamento'] == equipamento].groupby('Data').count().reset_index().drop(["Equipamento"],axis=1)
 ts = ts.rename(columns={'Classe':'Falhas'})
 st.line_chart(ts.rename(columns={'Data':'index'}).set_index('index'))
-st.write('Mínimo de falhas por {}: {}'.format(periodo.lower(),ts.min()['Falhas']))
+
+media = ts.mean()
+
+st.write("""### Mínimo de falhas por {}: {}""".format(periodo.lower(),ts.min()['Falhas']))
+st.write("""### Média de falhas por {}: {}""".format(periodo.lower(),ts.mean()['Falhas']))
 
 st.write("""## Modelo Naive""")
 
@@ -122,8 +126,16 @@ st.write("""## Previsão""")
 
 #results_AR.plot_predict(1,100) 
 
-mes = st.selectbox('Escolha o mês:', [i for i in range(1,13)])
+artigo = {"Mês":"o","Semana":"a","Dia":"o"}
 
-st.write(results_AR.forecast(steps=mes).values[-1])
+mes = st.selectbox('Escolha {} {}:'.format(artigo[periodo],periodo.lower()), [i for i in range(1,13)])
+
+previsao = results_AR.forecast(steps=mes).values[-1]
+
+st.write(previsao)
+
+avaliacao = "acima" if previsao >= ts.mean().values else "abaixo"
+
+st.write("""### O número de falhas d{} {} {} está {} da média""".format(artigo[periodo],periodo.lower(),mes,avaliacao))
 
 
