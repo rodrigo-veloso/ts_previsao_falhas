@@ -11,6 +11,22 @@ def calc_metrics(y,y_pred):
 
   return mse_naive, rmse_naive, mae
 
+def transform_day(x, periodo):
+  x = str(x)
+  if periodo == 'Semana':
+    if int(x[8:10]) <= 7:
+      day = '3'
+    elif int(x[8:10]) <= 14:
+      day = '10'
+    elif int(x[8:10]) <= 21:   
+      day = '17'
+    else:   
+      day = '25'
+    return x[:8]+day+x[10:] 
+  if periodo == 'Mês':
+    return x[:8]+'15'+x[10:]
+  if periodo == 'Dia':
+    return x
 
 st.write("""# Séries Temporais Para Previsão de Falhas""")
 
@@ -26,22 +42,25 @@ for equipamento in df.groupby('Equipamento').count().reset_index().sort_values('
 
 equipamento = st.selectbox('Escolha o equipamento:', equipamentos)
 
-st.write("""## Falhas do {} por dia""".format(equipamento))
+periodo = st.selectbox('Escolha o período de análise:', ['Dia','Semana','Mês'])
 
-ts = df[df['Equipamento'] == equipamento].groupby('Data').count().reset_index().drop(["Equipamento"],axis=1)
-ts = ts.rename(columns={'Classe':'Falhas'})
-st.line_chart(ts.rename(columns={'Data':'index'}).set_index('index'))
+st.write("""## Falhas do {} por {}""".format(equipamento,periodo.lower()))
 
-st.write("""## Falhas do {} por mês""".format(equipamento))
+#ts = df[df['Equipamento'] == equipamento].groupby('Data').count().reset_index().drop(["Equipamento"],axis=1)
+#ts = ts.rename(columns={'Classe':'Falhas'})
+#st.line_chart(ts.rename(columns={'Data':'index'}).set_index('index'))
 
-df['Data'] = df['Data'].apply(lambda x: str(x))
-df['Data'] = df['Data'].apply(lambda x: x[:8]+'15'+x[10:])
+#st.write("""## Falhas do {} por mês""".format(equipamento))
+
+#df['Data'] = df['Data'].apply(lambda x: str(x))
+#df['Data'] = df['Data'].apply(lambda x: x[:8]+'15'+x[10:])
+df['Data'] = df['Data'].apply(lambda x: transform_day(x))
 df['Data'] = df['Data'].astype("datetime64")
 
 ts = df[df['Equipamento'] == equipamento].groupby('Data').count().reset_index().drop(["Equipamento"],axis=1)
 ts = ts.rename(columns={'Classe':'Falhas'})
 st.line_chart(ts.rename(columns={'Data':'index'}).set_index('index'))
-st.write('Mínimo de falhas por mês: {}'.format(ts.min()['Falhas']))
+st.write('Mínimo de falhas por {}: {}'.format(periodo.lower(),ts.min()['Falhas']))
 
 st.write("""## Modelo Naive""")
 
