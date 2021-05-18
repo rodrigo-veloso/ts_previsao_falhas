@@ -7,3 +7,5 @@ openpyxl==3.0.6
 xlrd==1.2.0
 matplotlib
 statsmodels
+fbprophet
+pmdarima
